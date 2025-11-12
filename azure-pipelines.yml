@@ -1,19 +1,28 @@
 trigger:
   branches:
     include:
-      - main   # Or your active branch
+      - main
 
 pool:
-  name: Default  # Use the self-hosted agent running on your Azure VM
+  name: Default   # Self-hosted agent on your Azure VM
 
 steps:
+  - script: |
+      echo "Cleaning existing web directory..."
+      sudo rm -rf /var/www/html/*
+    displayName: 'Clean old files'
+
   - task: CopyFiles@2
     inputs:
       SourceFolder: '$(Build.SourcesDirectory)'
       Contents: '**/*.html'
       TargetFolder: '/var/www/html/'
-    displayName: 'Copy website files to Nginx directory'
+      OverWrite: true
+    displayName: 'Copy new HTML files to web directory'
 
   - script: |
+      echo "Setting permissions..."
+      sudo chown -R $USER:$USER /var/www/html
+      sudo chmod -R 755 /var/www/html
       sudo systemctl restart nginx
-    displayName: 'Restart Nginx Service'
+    displayName: 'Fix permissions and restart Nginx'
